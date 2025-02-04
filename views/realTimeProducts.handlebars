@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Products</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const socket = io();
+
+     
+      socket.on('productAdded', (product) => {
+        const list = document.getElementById('list-products');
+        const item = document.createElement('li');
+        item.id = `product-${product.id}`;
+        item.textContent = `${product.name} - $ ${product.price}`;
+        
+        
+        const deleteButton = document.createElement('button');
+        deleteButton.classList.add('btn-delete');
+        deleteButton.textContent = 'Eliminar';
+        deleteButton.onclick = () => deleteProduct(product.id);
+        item.appendChild(deleteButton);
+        
+        list.appendChild(item);
+      });
+
+      
+      socket.on('productDeleted', (idProduct) => {
+        const item = document.getElementById(`product-${idProduct}`);
+        if (item) {
+          item.remove();
+        }
+      });
+
+      
+      const form = document.getElementById('form-product');
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('name').value;
+        const price = document.getElementById('price').value;
+        socket.emit('newProduct', { name, price });
+        form.reset();
+      });
+    });
+
+    
+    function deleteProduct(idProduct) {
+      const socket = io();
+      socket.emit('deleteProduct', idProduct);
+    }
+  </script>
+</head>
+<body>
+  <h1>Products</h1>
+  <ul id="list-products" class="product-list">
+      {{#each products}} 
+        <li id="product-{{this.id}}">
+          {{this.name}} - ${{this.price}}
+          <button class="btn-delete" onclick="deleteProduct('{{this.id}}')">Delete</button>
+        </li>
+      {{/each}}
+  </ul>
+  <form id="form-product">
+    <input type="text" id="name" placeholder="Product name" required>
+    <input type="number" id="price" placeholder="Product price" step="0.01" required>
+    <button type="submit">Add Product</button>
+  </form>
+</body>
+</html>
